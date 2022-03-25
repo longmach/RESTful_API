@@ -36,25 +36,20 @@ app = flask.Flask(__name__)
 app.register_blueprint(boat.bp)
 client = datastore.Client()
 
-
-#url = "https://project7-long-mach.ue.r.appspot.com/"
-
 app.secret_key = str(uuid.uuid4()) 
 
-'''
-CLIENT_ID = '799383387107-9bolo900mbhd1kg2tasgchlen1r0k0as.apps.googleusercontent.com'
-CLIENT_SECRET = 'Oz3WYfxAsT_5FrXjyY-UamXu'
-SCOPE = 'https://www.googleapis.com/auth/userinfo.profile'
-'''
-
+#test on server
 REDIRECT_URI = 'https://project7-long-mach.ue.r.appspot.com/test'
+
+#test locally
 #REDIRECT_URI = 'http://localhost:8080/test'
 
+#set homepage
 @app.route('/welcome')
 def welcome():
   return render_template('welcome.html',url = REDIRECT_URI)
 
-
+#set redirect link to extract user's info and display them on the userInfo.html
 @app.route('/test')
 def test():
   if 'credentials' not in flask.session:
@@ -72,8 +67,6 @@ def test():
   names = profile['names'][0]
   firstName = names['givenName']
   lastName = names['familyName']
-  #name = profile['names']
-  #profile = people_service.people().get('people/me', personFields='names,emailAddresses')
 
   # Save credentials back to session in case access token was refreshed.
   # ACTION ITEM: In a production app, you likely want to save these
@@ -82,10 +75,10 @@ def test():
 
   app.config['token'] = flask.session['credentials']['id_token']
   app.config['client_id'] = flask.session['credentials']['client_id']
-  #return flask.jsonify(flask.session['credentials'])
-  #return render_template('userInfo.html', firstName = firstName, lastName = lastName, jwtToken = flask.session['credentials']['id_token'])
+
   return render_template('userInfo.html', firstName = firstName, lastName = lastName, jwtToken = app.config['token'])
 
+# Oauth 2.0
 @app.route('/authorize')
 def authorize():
   # Create flow instance to manage the OAuth 2.0 Authorization Grant Flow steps.
@@ -110,7 +103,7 @@ def authorize():
 
   return flask.redirect(authorization_url)
 
-
+# redirect link for Oauth 2.0
 @app.route('/oauth2callback')
 def oauth2callback():
   # Specify the state when creating the flow in the callback so that it can
@@ -133,7 +126,7 @@ def oauth2callback():
 
   return flask.redirect(flask.url_for('test'))
 
-
+# function to return all credentials as dict
 def credentials_to_dict(credentials):
   return {'token': credentials.token,
           'refresh_token': credentials.refresh_token,
@@ -143,9 +136,11 @@ def credentials_to_dict(credentials):
           'scopes': credentials.scopes,
           'id_token': credentials.id_token}
 
+# function to return name as dict
 def person_to_dict(person):
   return {'firstName': person.names.givenName}
 
+#get Request for all public boats
 @app.route('/owners/<owner_id>/boats', methods=['GET'])
 def boats_owner_get(owner_id):
     if request.method == 'GET':
